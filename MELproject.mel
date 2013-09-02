@@ -1,0 +1,232 @@
+//
+// SceneUI user interface for manipulation of Eke model
+// 
+// Developed for Script Programming & Technical Animation, Computer Science for Games, 2nd Year, University Of Bradford
+// 
+// @author David Kane
+// @version 1.0
+//
+
+file -f -new;
+
+// Loads the Maya scene containing the Eke model.
+proc loadEkeModel() {
+    
+    // Shading and textures in perspective view toggled on.
+    DisplayShadedAndTextured;
+    // Import command.
+    file -f -options "v=0"  -typ "mayaBinary" -o "C:/Users/Dave/Documents/tech_anim_script_prog/mouse_phase5x.mb";addRecentFile("C:/Users/Dave/Documents/tech_anim_script_prog/mouse_phase5x.mb", "mayaBinary");
+    requires "stereoCamera" "10.0";
+    // Hides all objects associated with character facial expression except eke_mouthsad_polypipe (default facial expression).
+    hide eke_mouthhappy_polypipe;
+    hide eke_brows;
+    hide gun_righthand;
+    hide gun_lefthand;
+    
+}
+
+// Creates a curve named 'path' and sets its co-ordinates to run in a figure of eight.
+proc createMotionPath() {
+    
+    curve -n path
+        -p 0 0 0
+        -p 10 0 -20
+        -p 20 0 -10
+        -p 0 0 0
+        -p -10 0 20
+        -p -20 0 10
+        -p 0 0 0
+        -p 10 0 20
+        -p 20 0 10
+        -p 0 0 0
+        -p -10 0 -20
+        -p -20 0 -10
+        -p 0 0 0
+        -d 2;
+        
+}
+
+// Sets the character model to follow the curve 'path'.
+proc applyPath() {
+    
+    select -r eke_all;
+    select -tgl path;
+    // Sets the path animation to take 384 frames (16 seconds @ 24fps) to complete.
+    pathAnimation -stu 0 -etu 384 -fa z -ua y -follow on;
+    // Continually loops those 384 frames to give the impression of continual movement.
+    playbackOptions -min 1 -max 384 -loop "continuous";
+}
+
+// Creates a path, applies the character model to it, and plays the scene.
+proc walk() {
+    
+    createMotionPath();
+    applyPath();
+    play -state on;
+}
+
+// Hides all objects associated with character facial expression except eke_mouthsad_polypipe (default 'sad' facial expression).
+proc sadFace() {
+    
+    hide eke_mouthhappy_polypipe;
+    showHidden eke_mouthsad_polypipe;
+    hide eke_brows;
+}
+    
+// Hides all objects associated with character facial expression except eke_mouthhappy_polypipe ('happy' facial expression).
+proc happyFace() {
+    
+    hide eke_mouthsad_polypipe;
+    showHidden eke_mouthhappy_polypipe;
+    hide eke_brows;
+    
+}
+
+
+// Shows all objects associated with facial expression, making the 'angry' facial expression.
+proc angryFace() {
+    
+    showHidden eke_mouthsad_polypipe;
+    showHidden eke_mouthhappy_polypipe;
+    showHidden eke_brows;
+    
+}
+
+// Shows the two gun models in each of the character's hands (default hidden).
+proc toolUp() {
+    
+    showHidden gun_lefthand;
+    showHidden gun_righthand;   
+}
+
+// Simplifies the creation of button UI elements.
+// @param $lbl        button text
+// @param $cmd        command to be executed on clicking of button.
+global proc createButton(string $lbl, string $cmd) {
+    button -label $lbl -command $cmd;
+}
+
+// Checks if an instance of the UI window uiwindow is already running, and deletes it if so.
+proc checkForOpen() {
+    if(`window -exists uiwindow`) deleteUI uiwindow;
+}
+
+// Creates a window uiwindow and declares the menu bar options.    
+proc setupUIWindow() {
+    
+    window -menuBar true -resizeToFitChildren true -title "SceneUI" uiwindow;
+
+    menu -label "File" -tearOff true;
+        menuItem -label "Load";
+        menuItem -label "Save";
+        menuItem -divider true;
+        menuItem -label "Close" -command "closeWindow";
+        
+    menu -label "Help" -helpMenu true;
+        menuItem -label "About this application...";
+}
+
+// Prepares a layout for the UI elements to be added to and populates the UI with elements.
+proc setupUILayout() {
+    
+    // UI elements added to a columnLayout will appear on the next row down from the last one.
+    columnLayout;
+    
+    separator -height 20 -width 400;
+    
+    textField -text "Eke 1.0" -editable false -width 400 -height 30;
+    textField -text "Script programming & technical animation : second year project" -editable false -width 400 -height 30;
+    
+    separator -height 20 -width 400;
+    
+    textField -text "Starts/stops animation loop:" -editable false -width 400 -height 30;
+    createButton("Walk!", "walk;");
+    createButton("Stop!", "play -state off;");
+    
+    separator -height 20 -width 400;
+    
+    textField -text "Adds weapons:" -editable false -width 400 -height 30;
+    createButton("Tool up!", "toolUp;");
+    
+    separator -height 20 -width 400;
+    
+    textField -text "Rotates head around X and Y axes:" -editable false -width 400 -height 30;
+    // Creates a slider UI element.
+    attrFieldSliderGrp
+        // Text appearing to the left of the slider.
+        -label    "Look up/down"
+        // The minimum value achievable by the slider (far left).
+        -min      -15
+        // The maximum value achievable by the slider (far right).
+        -max      15
+        // Object attribute that is assigned the slider's value.
+        -at       eke_head_all.rotateX;
+        
+    attrFieldSliderGrp
+        -label    "Look left/right"
+        -min      -15
+        -max      15
+        -at       eke_head_all.rotateY;
+        
+    separator -height 20 -width 400;
+    
+    textField -text "Rotates arms around Z and Y axes:" -editable false -width 400 -height 30;
+    attrFieldSliderGrp
+        -label    "Left arm up/down"
+        -min      -35
+        -max      4
+        -at       eke_leftarm.rotateZ;
+        
+    attrFieldSliderGrp
+        -label    "Left arm forward/back"
+        -min      -45
+        -max      15
+        -at       eke_leftarm.rotateY;
+        
+    attrFieldSliderGrp
+        -label    "Right arm up/down"
+        -min      -180
+        -max      -140
+        -at       eke_rightarm.rotateZ;
+        
+    attrFieldSliderGrp
+        -label    "Right arm forward/back"
+        -min      -45
+        -max      15
+        -at       eke_rightarm.rotateY;
+   
+    separator -height 20 -width 400;
+    
+    textField -text "Changes character facial expression:" -editable false -width 400 -height 30;
+    
+    checkBox -label "Sad" -value 0 -changeCommand "sadFace";
+    checkBox -label "Happy" -value 0 -changeCommand "happyFace";
+    checkBox -label "Angry!" -value 0 -changeCommand "angryFace";
+    
+    separator -height 20 -width 400;
+    
+    
+    textField -text "Closes window:" -editable false -width 400 -height 30;
+    createButton("Close", "deleteUI uiwindow;");
+    
+}
+
+// Displays the UI window uiwindow.
+proc finaliseUIWindow() {
+            
+    showWindow uiwindow;
+}
+
+// Runs through all processes required to create, populate and show the UI window.
+// If there is an error with any called procedures the UI will not run.
+// Initialising subsystems in this way makes for easier identification of errors.
+proc setupUI() {
+    
+    loadEkeModel();
+    checkForOpen();
+    setupUIWindow();
+    setupUILayout();
+    finaliseUIWindow();
+}
+
+setupUI();
